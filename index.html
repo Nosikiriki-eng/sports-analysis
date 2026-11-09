@@ -1,0 +1,90 @@
+
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sports Analysis</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #101827;
+      color: white;
+    }
+    header {
+      background: #172438;
+      padding: 24px 16px;
+      text-align: center;
+    }
+    h1 { margin: 0; color: #38bdf8; }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      margin: 14px 0;
+      border-radius: 12px;
+    }
+    h2 { color: #38bdf8; }
+    .sports {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+    }
+    .sport {
+      background: #26364d;
+      padding: 18px;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 18px;
+    }
+    .note { color: #aebed0; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SPORTS ANALYSIS</h1>
+    <p>Sports predictions and performance tracking</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Daily Analysis</h2>
+      <p class="note">
+        Pregled sportskih događaja, analiza utakmica,
+        prognoze i statistika.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Sports</h2>
+      <div class="sports">
+        <div class="sport">⚽ Football</div>
+        <div class="sport">🏀 Basketball</div>
+        <div class="sport">🏒 Hockey</div>
+        <div class="sport">🎾 Tennis</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Prediction Tracker</h2>
+      <p class="note">
+        Praćenje prognoza, pogođenih i promašenih ishoda,
+        uspješnosti i vrijednosti kvota.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Analysis Markets</h2>
+      <p class="note">
+        Winners · Over/Under · Handicap · Exact Score ·
+        Both Teams To Score · Player Props
+      </p>
+    </section>
+  </main>
+</body>
+</html>
