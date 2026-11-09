@@ -3,131 +3,163 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sports Analysis</title>
+<title>SPORT AI ANALYST</title>
 <style>
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #101827;
-  color: white;
-}
-header {
-  background: #172438;
-  padding: 25px 15px;
-  text-align: center;
-  border-bottom: 2px solid #38bdf8;
-}
-h1 { color: #38bdf8; margin: 0; }
-header p { color: #aebed0; }
-.container { max-width: 950px; margin: auto; padding: 18px; }
-.card {
-  background: #1e293b;
-  padding: 20px;
-  margin: 15px 0;
-  border-radius: 12px;
-}
-h2 { color: #38bdf8; }
-.sports {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-button {
-  border: 1px solid #475569;
-  background: #26364d;
-  color: white;
-  padding: 20px 10px;
-  border-radius: 10px;
-  font-size: 17px;
-  cursor: pointer;
-}
-button:hover, button.active {
-  background: #075985;
-  border-color: #38bdf8;
-}
-#sportInfo {
-  margin-top: 18px;
-  padding: 15px;
-  background: #172438;
-  border-radius: 10px;
-  line-height: 1.6;
-}
-.note { color: #aebed0; line-height: 1.6; }
-footer { text-align: center; color: #8293a8; padding: 25px; }
+*{box-sizing:border-box}
+body{margin:0;background:#101827;color:#f1f5f9;font-family:Arial,sans-serif}
+header{background:#172438;padding:22px;text-align:center;border-bottom:2px solid #20c997}
+h1{color:#20c997;margin:0}
+header p{color:#aab8ca}
+main{max-width:1100px;margin:auto;padding:18px}
+.panel{background:#1b293d;padding:17px;border-radius:12px;margin-bottom:16px}
+select,input,button{padding:12px;border-radius:7px;border:0;margin:5px;background:#293c55;color:white}
+button{background:#087f69;cursor:pointer;font-weight:bold}
+button:hover{background:#0aa887}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#293c55;padding:15px;border-radius:9px;text-align:center}
+.stat strong{display:block;font-size:25px;color:#20c997}
+.match{background:#24364e;padding:16px;border-radius:10px;margin:12px 0}
+.match h3{margin-top:0}
+.prediction{color:#20c997;font-weight:bold}
+.small{color:#aab8ca;font-size:13px}
+.tag{display:inline-block;background:#087f69;padding:5px 9px;border-radius:5px;font-size:12px}
+@media(max-width:550px){.stats{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-
 <header>
-  <h1>SPORTS ANALYSIS</h1>
-  <p>Analysis · Predictions · Statistics · Performance</p>
+<h1>SPORT AI ANALYST</h1>
+<p>Sportska analiza • Prognoze • Statistika</p>
 </header>
 
-<main class="container">
+<main>
+<div class="panel">
+<h2>Odabir sporta</h2>
+<select id="sport" onchange="render()">
+<option value="Football">⚽ Nogomet</option>
+<option value="Tennis">🎾 Tenis</option>
+<option value="NBA">🏀 NBA</option>
+<option value="Basketball">🏀 Košarka</option>
+<option value="NHL">🏒 NHL</option>
+<option value="Hockey">🏒 Hokej</option>
+</select>
+<input type="date" id="date">
+<button onclick="render()">Prikaži</button>
+</div>
 
-<section class="card">
-  <h2>Daily Analysis</h2>
-  <p class="note">
-    Pregled utakmica i sportskih događaja,
-    statistička analiza i prognoze.
-  </p>
-</section>
+<div class="panel">
+<h2>Pregled prognoza</h2>
+<div class="stats">
+<div class="stat"><strong id="total">0</strong>Analizirano</div>
+<div class="stat"><strong id="wins">0</strong>Pogođeno</div>
+<div class="stat"><strong id="rate">0%</strong>Uspješnost</div>
+</div>
+</div>
 
-<section class="card">
-  <h2>Select Sport</h2>
-  <div class="sports">
-    <button onclick="selectSport('Football', this)">⚽ Football</button>
-    <button onclick="selectSport('Basketball', this)">🏀 Basketball</button>
-    <button onclick="selectSport('Hockey', this)">🏒 Hockey</button>
-    <button onclick="selectSport('Tennis', this)">🎾 Tennis</button>
-  </div>
+<div class="panel">
+<h2>Sportski događaji</h2>
+<p class="small">Demo prikaz – stvarni raspored utakmica još nije povezan.</p>
+<div id="matches"></div>
+</div>
 
-  <div id="sportInfo">
-    Odaberi sport za prikaz dostupnih analiza.
-  </div>
-</section>
-
-<section class="card">
-  <h2>Prediction Tracker</h2>
-  <p class="note">
-    Evidencija prognoza, pogođenih i promašenih ishoda,
-    postotak uspješnosti i analiza rezultata.
-  </p>
-</section>
-
-<section class="card">
-  <h2>Analysis Markets</h2>
-  <p class="note">
-    Winners · Over/Under · Handicap · Exact Score ·
-    Both Teams To Score · Player Props
-  </p>
-</section>
-
+<div class="panel">
+<h2>Moje prognoze</h2>
+<div id="history">Još nema spremljenih prognoza.</div>
+</div>
 </main>
 
-<footer>SPORTS ANALYSIS — Personal Project</footer>
-
 <script>
-function selectSport(sport, button) {
-  document.querySelectorAll('.sports button').forEach(b => {
-    b.classList.remove('active');
-  });
+const samples={
+Football:[
+["Arsenal","Chelsea","1","2:1","Over 2.5"],
+["Liverpool","Tottenham","1","3:1","Over 2.5"]
+],
+Tennis:[
+["Player A","Player B","2","1:2","Over 22.5 gemova"],
+["Player C","Player D","1","2:0","Under 22.5 gemova"]
+],
+NBA:[
+["Boston Celtics","Miami Heat","1","112:105","Over 215.5"],
+["Denver Nuggets","LA Lakers","1","118:110","Over 220.5"]
+],
+Basketball:[
+["Team A","Team B","1","85:78","Over 155.5"],
+["Team C","Team D","2","72:80","Under 155.5"]
+],
+NHL:[
+["Boston Bruins","Toronto Maple Leafs","1","4:2","Over 5.5"],
+["New York Rangers","Florida Panthers","2","2:3","Under 6.5"]
+],
+Hockey:[
+["Team A","Team B","1","4:2","Over 5.5"]
+]
+};
 
-  button.classList.add('active');
+let history=JSON.parse(localStorage.getItem("sportHistory")||"[]");
 
-  const markets = {
-    Football: '1X2 · Exact Score · BTTS · Over/Under Goals · Cards · Corners',
-    Basketball: 'Match Winner · Handicap · Over/Under · Player Points · Rebounds · Assists',
-    Hockey: 'Match Winner · Winner incl. OT · Over/Under · Handicap · Player Props',
-    Tennis: 'Match Winner · Set Score · Over/Under Games · Game Handicap'
-  };
+function render(){
+const sport=document.getElementById("sport").value;
+const games=samples[sport]||[];
+const container=document.getElementById("matches");
+container.innerHTML="";
 
-  document.getElementById('sportInfo').innerHTML =
-    '<h3>' + sport + '</h3><p>' + markets[sport] +
-    '</p><p>Detaljna analiza i prognoze bit će dodane u sljedećoj fazi.</p>';
+games.forEach((g,i)=>{
+const div=document.createElement("div");
+div.className="match";
+div.innerHTML=`
+<span class="tag">${sport}</span>
+<h3>${g[0]} – ${g[1]}</h3>
+<p>Prognoza pobjednika: <span class="prediction">${g[2]}</span></p>
+<p>Predviđeni rezultat: ${g[3]}</p>
+<p>Over / Under: ${g[4]}</p>
+<p class="small">Ogledna prognoza – nije AI izračun.</p>
+<button onclick="save(${i})">Spremi prognozu</button>`;
+container.appendChild(div);
+});
 }
-</script>
 
+function save(i){
+const sport=document.getElementById("sport").value;
+const g=samples[sport][i];
+if(history.some(x=>x.sport===sport&&x.a===g[0]&&x.b===g[1])){
+alert("Ova prognoza je već spremljena.");
+return;
+}
+history.push({sport:sport,a:g[0],b:g[1],pick:g[2],score:g[3],total:g[4],status:"Čeka rezultat"});
+localStorage.setItem("sportHistory",JSON.stringify(history));
+updateHistory();
+}
+
+function updateHistory(){
+const box=document.getElementById("history");
+box.innerHTML="";
+history.forEach((h,i)=>{
+const div=document.createElement("div");
+div.className="match";
+div.innerHTML=`<b>${h.a} – ${h.b}</b>
+<p>${h.sport} | ${h.pick} | ${h.score} | ${h.total}</p>
+<p>Status: ${h.status}</p>
+<button onclick="settle(${i},'Pogođeno')">Pogođeno</button>
+<button onclick="settle(${i},'Promašeno')">Promašeno</button>`;
+box.appendChild(div);
+});
+const done=history.filter(x=>x.status!=="Čeka rezultat");
+const wins=done.filter(x=>x.status==="Pogođeno").length;
+document.getElementById("total").textContent=history.length;
+document.getElementById("wins").textContent=wins;
+document.getElementById("rate").textContent=done.length?Math.round(wins/done.length*100)+"%":"0%";
+if(!history.length)box.textContent="Još nema spremljenih prognoza.";
+}
+
+function settle(i,status){
+history[i].status=status;
+localStorage.setItem("sportHistory",JSON.stringify(history));
+updateHistory();
+}
+
+document.getElementById("date").value=new Date().toISOString().slice(0,10);
+render();
+updateHistory();
+</script>
 </body>
 </html>
