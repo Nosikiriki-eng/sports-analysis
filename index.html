@@ -1,90 +1,133 @@
-
 <!DOCTYPE html>
 <html lang="hr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sports Analysis</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #101827;
-      color: white;
-    }
-    header {
-      background: #172438;
-      padding: 24px 16px;
-      text-align: center;
-    }
-    h1 { margin: 0; color: #38bdf8; }
-    .container {
-      max-width: 900px;
-      margin: auto;
-      padding: 20px;
-    }
-    .card {
-      background: #1e293b;
-      padding: 20px;
-      margin: 14px 0;
-      border-radius: 12px;
-    }
-    h2 { color: #38bdf8; }
-    .sports {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 12px;
-    }
-    .sport {
-      background: #26364d;
-      padding: 18px;
-      text-align: center;
-      border-radius: 10px;
-      font-size: 18px;
-    }
-    .note { color: #aebed0; line-height: 1.5; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sports Analysis</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #101827;
+  color: white;
+}
+header {
+  background: #172438;
+  padding: 25px 15px;
+  text-align: center;
+  border-bottom: 2px solid #38bdf8;
+}
+h1 { color: #38bdf8; margin: 0; }
+header p { color: #aebed0; }
+.container { max-width: 950px; margin: auto; padding: 18px; }
+.card {
+  background: #1e293b;
+  padding: 20px;
+  margin: 15px 0;
+  border-radius: 12px;
+}
+h2 { color: #38bdf8; }
+.sports {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+button {
+  border: 1px solid #475569;
+  background: #26364d;
+  color: white;
+  padding: 20px 10px;
+  border-radius: 10px;
+  font-size: 17px;
+  cursor: pointer;
+}
+button:hover, button.active {
+  background: #075985;
+  border-color: #38bdf8;
+}
+#sportInfo {
+  margin-top: 18px;
+  padding: 15px;
+  background: #172438;
+  border-radius: 10px;
+  line-height: 1.6;
+}
+.note { color: #aebed0; line-height: 1.6; }
+footer { text-align: center; color: #8293a8; padding: 25px; }
+</style>
 </head>
 <body>
-  <header>
-    <h1>SPORTS ANALYSIS</h1>
-    <p>Sports predictions and performance tracking</p>
-  </header>
 
-  <main class="container">
-    <section class="card">
-      <h2>Daily Analysis</h2>
-      <p class="note">
-        Pregled sportskih događaja, analiza utakmica,
-        prognoze i statistika.
-      </p>
-    </section>
+<header>
+  <h1>SPORTS ANALYSIS</h1>
+  <p>Analysis · Predictions · Statistics · Performance</p>
+</header>
 
-    <section class="card">
-      <h2>Sports</h2>
-      <div class="sports">
-        <div class="sport">⚽ Football</div>
-        <div class="sport">🏀 Basketball</div>
-        <div class="sport">🏒 Hockey</div>
-        <div class="sport">🎾 Tennis</div>
-      </div>
-    </section>
+<main class="container">
 
-    <section class="card">
-      <h2>Prediction Tracker</h2>
-      <p class="note">
-        Praćenje prognoza, pogođenih i promašenih ishoda,
-        uspješnosti i vrijednosti kvota.
-      </p>
-    </section>
+<section class="card">
+  <h2>Daily Analysis</h2>
+  <p class="note">
+    Pregled utakmica i sportskih događaja,
+    statistička analiza i prognoze.
+  </p>
+</section>
 
-    <section class="card">
-      <h2>Analysis Markets</h2>
-      <p class="note">
-        Winners · Over/Under · Handicap · Exact Score ·
-        Both Teams To Score · Player Props
-      </p>
-    </section>
-  </main>
+<section class="card">
+  <h2>Select Sport</h2>
+  <div class="sports">
+    <button onclick="selectSport('Football', this)">⚽ Football</button>
+    <button onclick="selectSport('Basketball', this)">🏀 Basketball</button>
+    <button onclick="selectSport('Hockey', this)">🏒 Hockey</button>
+    <button onclick="selectSport('Tennis', this)">🎾 Tennis</button>
+  </div>
+
+  <div id="sportInfo">
+    Odaberi sport za prikaz dostupnih analiza.
+  </div>
+</section>
+
+<section class="card">
+  <h2>Prediction Tracker</h2>
+  <p class="note">
+    Evidencija prognoza, pogođenih i promašenih ishoda,
+    postotak uspješnosti i analiza rezultata.
+  </p>
+</section>
+
+<section class="card">
+  <h2>Analysis Markets</h2>
+  <p class="note">
+    Winners · Over/Under · Handicap · Exact Score ·
+    Both Teams To Score · Player Props
+  </p>
+</section>
+
+</main>
+
+<footer>SPORTS ANALYSIS — Personal Project</footer>
+
+<script>
+function selectSport(sport, button) {
+  document.querySelectorAll('.sports button').forEach(b => {
+    b.classList.remove('active');
+  });
+
+  button.classList.add('active');
+
+  const markets = {
+    Football: '1X2 · Exact Score · BTTS · Over/Under Goals · Cards · Corners',
+    Basketball: 'Match Winner · Handicap · Over/Under · Player Points · Rebounds · Assists',
+    Hockey: 'Match Winner · Winner incl. OT · Over/Under · Handicap · Player Props',
+    Tennis: 'Match Winner · Set Score · Over/Under Games · Game Handicap'
+  };
+
+  document.getElementById('sportInfo').innerHTML =
+    '<h3>' + sport + '</h3><p>' + markets[sport] +
+    '</p><p>Detaljna analiza i prognoze bit će dodane u sljedećoj fazi.</p>';
+}
+</script>
+
 </body>
 </html>
