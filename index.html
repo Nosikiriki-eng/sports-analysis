@@ -5,113 +5,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPORT AI ANALYST</title>
-
 <style>
 *{box-sizing:border-box}
-
-body{
-margin:0;
-background:#101827;
-color:#f1f5f9;
-font-family:Arial,sans-serif;
-}
-
-header{
-background:#172438;
-padding:22px;
-text-align:center;
-border-bottom:2px solid #20c997;
-}
-
+body{margin:0;background:#101827;color:#f1f5f9;font-family:Arial,sans-serif}
+header{background:#172438;padding:22px;text-align:center;border-bottom:2px solid #20c997}
 h1{color:#20c997;margin:0}
 header p{color:#aab8ca}
-
-main{
-max-width:1100px;
-margin:auto;
-padding:18px;
-}
-
-.panel{
-background:#1b293d;
-padding:17px;
-border-radius:12px;
-margin-bottom:16px;
-}
-
-select,input,button{
-padding:12px;
-border-radius:7px;
-border:0;
-margin:5px;
-background:#293c55;
-color:white;
-}
-
-button{
-background:#087f69;
-cursor:pointer;
-font-weight:bold;
-}
-
+main{max-width:1100px;margin:auto;padding:18px}
+.panel{background:#1b293d;padding:17px;border-radius:12px;margin-bottom:16px}
+select,input,button{padding:12px;border-radius:7px;border:0;margin:5px;background:#293c55;color:white;max-width:100%}
+button{background:#087f69;cursor:pointer;font-weight:bold}
 button:hover{background:#0aa887}
-
-.stats{
-display:grid;
-grid-template-columns:repeat(3,1fr);
-gap:10px;
-}
-
-.stat{
-background:#293c55;
-padding:15px;
-border-radius:9px;
-text-align:center;
-}
-
-.stat strong{
-display:block;
-font-size:25px;
-color:#20c997;
-}
-
-.match{
-background:#24364e;
-padding:16px;
-border-radius:10px;
-margin:12px 0;
-}
-
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:#293c55;padding:15px;border-radius:9px;text-align:center}
+.stat strong{display:block;font-size:25px;color:#20c997}
+.match{background:#24364e;padding:16px;border-radius:10px;margin:12px 0}
 .match h3{margin-top:0}
 .prediction{color:#20c997;font-weight:bold}
 .small{color:#aab8ca;font-size:13px}
-
-.tag{
-display:inline-block;
-background:#087f69;
-padding:5px 9px;
-border-radius:5px;
-font-size:12px;
-}
-
-@media(max-width:550px){
-.stats{grid-template-columns:1fr 1fr}
-}
+.tag{display:inline-block;background:#087f69;padding:5px 9px;border-radius:5px;font-size:12px}
+.filters{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.filters select{flex:1;min-width:220px}
+@media(max-width:550px){.stats{grid-template-columns:1fr 1fr}.filters select{width:100%}}
 </style>
 </head>
-
 <body>
-
 <header>
 <h1>SPORT AI ANALYST</h1>
 <p>Sportska analiza • Prognoze • Statistika</p>
 </header>
 
 <main>
-
 <div class="panel">
 <h2>Odabir sporta</h2>
-
 <select id="sport" onchange="render()">
 <option value="Football">⚽ Nogomet</option>
 <option value="Tennis">🎾 Tenis</option>
@@ -121,37 +47,38 @@ font-size:12px;
 <option value="Hockey">🏒 Hokej</option>
 </select>
 
-<input type="date" id="date">
+<div id="footballFilters">
+<h3>Vrsta natjecanja</h3>
+<div class="filters">
+<select id="category" onchange="updateCompetitions()">
+<option value="leagues">Nacionalna prvenstva</option>
+<option value="cups">Nacionalni kupovi</option>
+<option value="international">Međunarodni kupovi</option>
+<option value="nationalTeams">Reprezentacije</option>
+</select>
+<select id="competition">
+<option value="">Sva natjecanja u kategoriji</option>
+</select>
+</div>
+</div>
 
-<button onclick="render()">Prikaži</button>
+<input type="date" id="date">
+<button onclick="render()">PRIKAŽI UTAKMICE</button>
+<p class="small">Izvor nogometnih podataka: TheSportsDB. Pokrivenost ovisi o dostupnosti podataka za pojedino natjecanje.</p>
 </div>
 
 <div class="panel">
 <h2>Pregled prognoza</h2>
-
 <div class="stats">
-
-<div class="stat">
-<strong id="total">0</strong>
-Analizirano
-</div>
-
-<div class="stat">
-<strong id="wins">0</strong>
-Pogođeno
-</div>
-
-<div class="stat">
-<strong id="rate">0%</strong>
-Uspješnost
-</div>
-
+<div class="stat"><strong id="total">0</strong>Analizirano</div>
+<div class="stat"><strong id="wins">0</strong>Pogođeno</div>
+<div class="stat"><strong id="rate">0%</strong>Uspješnost</div>
 </div>
 </div>
 
 <div class="panel">
 <h2>Sportski događaji</h2>
-<p class="small" id="info">Odaberi sport i datum.</p>
+<p class="small" id="info">Odaberi sport, natjecanje i datum.</p>
 <div id="matches"></div>
 </div>
 
@@ -159,304 +86,205 @@ Uspješnost
 <h2>Moje prognoze</h2>
 <div id="history">Još nema spremljenih prognoza.</div>
 </div>
-
 </main>
 
 <script>
-
 const API="https://sports-analysis.amitavamandi2.workers.dev";
 
-const samples={
+const competitionGroups={
+leagues:[
+["Sva natjecanja",""],
+["Brazil – Serie A","Brazilian Serie A"],
+["Argentina – Primera Division","Argentine Primera Division"],
+["Urugvaj – Primera Division","Uruguayan Primera Division"],
+["Kolumbija – Primera A","Colombian Primera A"],
+["Čile – Primera Division","Chilean Primera Division"],
+["Ekvador – Serie A","Ecuadorian Serie A"],
+["Peru – Liga 1","Peruvian Primera Division"],
+["Paragvaj – Primera Division","Paraguayan Primera Division"],
+["Bolivija – Division Profesional","Bolivian Primera Division"],
+["Venezuela – Primera Division","Venezuelan Primera Division"]
+],
+cups:[
+["Svi nacionalni kupovi",""],
+["Brazil – Copa do Brasil","Copa do Brasil"],
+["Argentina – Copa Argentina","Copa Argentina"],
+["Urugvaj – Copa AUF Uruguay","Copa AUF Uruguay"],
+["Kolumbija – Copa Colombia","Copa Colombia"],
+["Čile – Copa Chile","Copa Chile"],
+["Ekvador – Copa Ecuador","Copa Ecuador"],
+["Paragvaj – Copa Paraguay","Copa Paraguay"],
+["Venezuela – Copa Venezuela","Copa Venezuela"]
+],
+international:[
+["Sva međunarodna natjecanja",""],
+["Copa Libertadores","Copa Libertadores"],
+["Copa Sudamericana","Copa Sudamericana"],
+["Recopa Sudamericana","Recopa Sudamericana"],
+["Copa Libertadores U20","Copa Libertadores U20"],
+["Copa Libertadores Femenina","Copa Libertadores Femenina"],
+["FIFA Club World Cup","FIFA Club World Cup"],
+["FIFA Intercontinental Cup","FIFA Intercontinental Cup"]
+],
+nationalTeams:[
+["Sva reprezentativna natjecanja",""],
+["Copa America","Copa America"],
+["FIFA World Cup","FIFA World Cup"],
+["CONMEBOL World Cup Qualifiers","CONMEBOL World Cup Qualifiers"],
+["Copa America U20","Copa America U20"],
+["Copa America U17","Copa America U17"]
+]
+};
 
+function updateCompetitions(){
+const category=document.getElementById("category").value;
+const select=document.getElementById("competition");
+select.innerHTML="";
+(competitionGroups[category]||[]).forEach(function(item){
+const option=document.createElement("option");
+option.value=item[1];
+option.textContent=item[0];
+select.appendChild(option);
+});
+}
+
+const samples={
 Tennis:[
 ["Player A","Player B","2","1:2","Over 22.5 gemova"],
 ["Player C","Player D","1","2:0","Under 22.5 gemova"]
 ],
-
 NBA:[
 ["Boston Celtics","Miami Heat","1","112:105","Over 215.5"],
 ["Denver Nuggets","LA Lakers","1","118:110","Over 220.5"]
 ],
-
 Basketball:[
 ["Team A","Team B","1","85:78","Over 155.5"],
 ["Team C","Team D","2","72:80","Under 155.5"]
 ],
-
 NHL:[
 ["Boston Bruins","Toronto Maple Leafs","1","4:2","Over 5.5"],
 ["New York Rangers","Florida Panthers","2","2:3","Under 6.5"]
 ],
-
 Hockey:[
 ["Team A","Team B","1","4:2","Over 5.5"]
 ]
-
 };
 
 let history=[];
-
 try{
 history=JSON.parse(localStorage.getItem("sportHistory")||"[]");
 if(!Array.isArray(history))history=[];
-}catch(error){
-history=[];
-}
+}catch(error){history=[];}
 
 function localDate(){
 const d=new Date();
 const offset=d.getTimezoneOffset();
-return new Date(d.getTime()-offset*60000)
-.toISOString().slice(0,10);
+return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);
 }
 
-
-// GLAVNA FUNKCIJA
-
 async function render(){
-
 const sport=document.getElementById("sport").value;
 const date=document.getElementById("date").value;
 const container=document.getElementById("matches");
 const info=document.getElementById("info");
-
+const footballFilters=document.getElementById("footballFilters");
 container.innerHTML="";
+footballFilters.style.display=sport==="Football"?"block":"none";
 
 if(sport==="Football"){
-
-if(!date){
-info.textContent="Odaberi datum.";
-return;
-}
-
-info.textContent="Učitavanje stvarnih nogometnih utakmica...";
-
+if(!date){info.textContent="Odaberi datum.";return;}
+const league=document.getElementById("competition").value;
+const category=document.getElementById("category");
+const categoryName=category.options[category.selectedIndex].text;
+const competition=document.getElementById("competition");
+const competitionName=competition.options[competition.selectedIndex].text;
+info.textContent="Učitavanje nogometnih utakmica...";
 try{
-
-const response=await fetch(
-`${API}/sportsdb?date=${date}`
-);
-
-if(!response.ok){
-throw new Error("API greška: "+response.status);
-}
-
+let endpoint=API+"/sportsdb?date="+encodeURIComponent(date);
+if(league)endpoint+="&league="+encodeURIComponent(league);
+const response=await fetch(endpoint);
+if(!response.ok)throw new Error("API greška: "+response.status);
 const data=await response.json();
 const games=data.events||[];
-
-info.textContent=
-`TheSportsDB • ${games.length} utakmica • ${date}`;
-
+info.textContent="TheSportsDB • "+games.length+" utakmica • "+date+" • "+(league?competitionName:categoryName);
 if(games.length===0){
-container.textContent=
-"Nema dostupnih utakmica za odabrani datum.";
+container.textContent="Nema dostupnih utakmica za odabrani izbor i datum. Probaj sva natjecanja u kategoriji.";
 return;
 }
-
-games.forEach(g=>{
-
+games.forEach(function(g){
 const div=document.createElement("div");
 div.className="match";
-
 const home=g.strHomeTeam||"Domaćin";
 const away=g.strAwayTeam||"Gost";
-const competition=g.strLeague||"Natjecanje";
-
+const leagueName=g.strLeague||"Natjecanje";
 let time="Vrijeme nije dostupno";
-
 if(g.strTimestamp){
-
-time=new Date(g.strTimestamp).toLocaleTimeString(
-"hr-HR",
-{
-hour:"2-digit",
-minute:"2-digit",
-timeZone:"Europe/Zagreb"
+time=new Date(g.strTimestamp).toLocaleTimeString("hr-HR",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zagreb"});
 }
-);
-
-}
-
-const statusNames={
-NS:"Zakazana",
-FT:"Završena",
-LIVE:"U tijeku",
-HT:"Poluvrijeme",
-AET:"Završena nakon produžetaka",
-PEN:"Penali",
-POST:"Odgođena",
-CANC:"Otkazana"
-};
-
-const status=statusNames[g.strStatus]||
-g.strStatus||"Nepoznat";
-
+const statusNames={NS:"Zakazana",FT:"Završena",LIVE:"U tijeku",HT:"Poluvrijeme",AET:"Završena nakon produžetaka",PEN:"Penali",POST:"Odgođena",CANC:"Otkazana"};
+const status=statusNames[g.strStatus]||g.strStatus||"Nepoznat";
 let result="Još nema rezultata";
-
-if(
-g.intHomeScore!==null &&
-g.intHomeScore!==undefined &&
-g.intAwayScore!==null &&
-g.intAwayScore!==undefined
-){
-result=`${g.intHomeScore} : ${g.intAwayScore}`;
+if(g.intHomeScore!==null&&g.intHomeScore!==undefined&&g.intAwayScore!==null&&g.intAwayScore!==undefined){
+result=g.intHomeScore+" : "+g.intAwayScore;
 }
-
-div.innerHTML=`
-<span class="tag">STVARNI PODACI</span>
-<h3>${home} – ${away}</h3>
-<p>${competition}</p>
-<p>Početak: ${time} (Hrvatska)</p>
-<p>Status: ${status}</p>
-<p>Rezultat:
-<span class="prediction">${result}</span>
-</p>
-`;
-
+div.innerHTML='<span class="tag">STVARNI PODACI</span><h3>'+home+' – '+away+'</h3><p>'+leagueName+'</p><p>Početak: '+time+' (Hrvatska)</p><p>Status: '+status+'</p><p>Rezultat: <span class="prediction">'+result+'</span></p>';
 container.appendChild(div);
-
 });
-
 }catch(error){
-
 info.textContent="Greška pri dohvaćanju utakmica.";
 container.textContent=error.message;
-
 }
-
 return;
-
 }
-
-
-// DEMO ZA OSTALE SPORTOVE
 
 const games=samples[sport]||[];
-
-info.textContent=
-"Demo podaci – nisu stvarni raspored ni AI prognoze.";
-
-games.forEach((g,i)=>{
-
+info.textContent="Demo podaci – nisu stvarni raspored ni AI prognoze.";
+games.forEach(function(g,i){
 const div=document.createElement("div");
 div.className="match";
-
-div.innerHTML=`
-<span class="tag">${sport} DEMO</span>
-<h3>${g[0]} – ${g[1]}</h3>
-<p>Prognoza pobjednika:
-<span class="prediction">${g[2]}</span></p>
-<p>Predviđeni rezultat: ${g[3]}</p>
-<p>Over / Under: ${g[4]}</p>
-<p class="small">Ogledna prognoza – nije AI izračun.</p>
-<button onclick="save(${i})">Spremi prognozu</button>
-`;
-
+div.innerHTML='<span class="tag">'+sport+' DEMO</span><h3>'+g[0]+' – '+g[1]+'</h3><p>Prognoza pobjednika: <span class="prediction">'+g[2]+'</span></p><p>Predviđeni rezultat: '+g[3]+'</p><p>Over / Under: '+g[4]+'</p><p class="small">Ogledna prognoza – nije AI izračun.</p><button onclick="save('+i+')">Spremi prognozu</button>';
 container.appendChild(div);
-
 });
-
 }
-
-
-// SPREMANJE PROGNOZE
 
 function save(i){
-
 const sport=document.getElementById("sport").value;
 const g=samples[sport][i];
-
-if(history.some(x=>
-x.sport===sport&&x.a===g[0]&&x.b===g[1]
-)){
-alert("Ova prognoza je već spremljena.");
-return;
+if(history.some(x=>x.sport===sport&&x.a===g[0]&&x.b===g[1])){
+alert("Ova prognoza je već spremljena.");return;
 }
-
-history.push({
-sport:sport,
-a:g[0],
-b:g[1],
-pick:g[2],
-score:g[3],
-total:g[4],
-status:"Čeka rezultat"
-});
-
+history.push({sport:sport,a:g[0],b:g[1],pick:g[2],score:g[3],total:g[4],status:"Čeka rezultat"});
 localStorage.setItem("sportHistory",JSON.stringify(history));
-
 updateHistory();
-
 }
-
-
-// POVIJEST PROGNOZA
 
 function updateHistory(){
-
 const box=document.getElementById("history");
-
 box.innerHTML="";
-
-history.forEach((h,i)=>{
-
+history.forEach(function(h,i){
 const div=document.createElement("div");
 div.className="match";
-
-div.innerHTML=`
-<b>${h.a} – ${h.b}</b>
-<p>${h.sport} | ${h.pick} | ${h.score} | ${h.total}</p>
-<p>Status: ${h.status}</p>
-<button onclick="settle(${i},'Pogođeno')">Pogođeno</button>
-<button onclick="settle(${i},'Promašeno')">Promašeno</button>
-`;
-
+div.innerHTML='<b>'+h.a+' – '+h.b+'</b><p>'+h.sport+' | '+h.pick+' | '+h.score+' | '+h.total+'</p><p>Status: '+h.status+'</p><button onclick="settle('+i+',\\'Pogođeno\\')">Pogođeno</button><button onclick="settle('+i+',\\'Promašeno\\')">Promašeno</button>';
 box.appendChild(div);
-
 });
-
 const done=history.filter(x=>x.status!=="Čeka rezultat");
-
-const wins=done.filter(x=>
-x.status==="Pogođeno"
-).length;
-
+const wins=done.filter(x=>x.status==="Pogođeno").length;
 document.getElementById("total").textContent=history.length;
 document.getElementById("wins").textContent=wins;
-
-document.getElementById("rate").textContent=
-done.length
-?Math.round(wins/done.length*100)+"%"
-:"0%";
-
-if(!history.length){
-box.textContent="Još nema spremljenih prognoza.";
+document.getElementById("rate").textContent=done.length?Math.round(wins/done.length*100)+"%":"0%";
+if(!history.length)box.textContent="Još nema spremljenih prognoza.";
 }
-
-}
-
-
-// REZULTAT PROGNOZE
 
 function settle(i,status){
-
 history[i].status=status;
-
 localStorage.setItem("sportHistory",JSON.stringify(history));
-
 updateHistory();
-
 }
 
-
-// POKRETANJE APLIKACIJE
-
 document.getElementById("date").value=localDate();
-
+updateCompetitions();
 updateHistory();
-
 render();
-
 </script>
 </body>
 </html>
