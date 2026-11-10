@@ -5,37 +5,113 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SPORT AI ANALYST</title>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#101827;color:#f1f5f9;font-family:Arial,sans-serif}
-header{background:#172438;padding:22px;text-align:center;border-bottom:2px solid #20c997}
+
+body{
+margin:0;
+background:#101827;
+color:#f1f5f9;
+font-family:Arial,sans-serif;
+}
+
+header{
+background:#172438;
+padding:22px;
+text-align:center;
+border-bottom:2px solid #20c997;
+}
+
 h1{color:#20c997;margin:0}
 header p{color:#aab8ca}
-main{max-width:1100px;margin:auto;padding:18px}
-.panel{background:#1b293d;padding:17px;border-radius:12px;margin-bottom:16px}
-select,input,button{padding:12px;border-radius:7px;border:0;margin:5px;background:#293c55;color:white}
-button{background:#087f69;cursor:pointer;font-weight:bold}
+
+main{
+max-width:1100px;
+margin:auto;
+padding:18px;
+}
+
+.panel{
+background:#1b293d;
+padding:17px;
+border-radius:12px;
+margin-bottom:16px;
+}
+
+select,input,button{
+padding:12px;
+border-radius:7px;
+border:0;
+margin:5px;
+background:#293c55;
+color:white;
+}
+
+button{
+background:#087f69;
+cursor:pointer;
+font-weight:bold;
+}
+
 button:hover{background:#0aa887}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.stat{background:#293c55;padding:15px;border-radius:9px;text-align:center}
-.stat strong{display:block;font-size:25px;color:#20c997}
-.match{background:#24364e;padding:16px;border-radius:10px;margin:12px 0}
+
+.stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+}
+
+.stat{
+background:#293c55;
+padding:15px;
+border-radius:9px;
+text-align:center;
+}
+
+.stat strong{
+display:block;
+font-size:25px;
+color:#20c997;
+}
+
+.match{
+background:#24364e;
+padding:16px;
+border-radius:10px;
+margin:12px 0;
+}
+
 .match h3{margin-top:0}
 .prediction{color:#20c997;font-weight:bold}
 .small{color:#aab8ca;font-size:13px}
-.tag{display:inline-block;background:#087f69;padding:5px 9px;border-radius:5px;font-size:12px}
-@media(max-width:550px){.stats{grid-template-columns:1fr 1fr}}
+
+.tag{
+display:inline-block;
+background:#087f69;
+padding:5px 9px;
+border-radius:5px;
+font-size:12px;
+}
+
+@media(max-width:550px){
+.stats{grid-template-columns:1fr 1fr}
+}
 </style>
 </head>
+
 <body>
+
 <header>
 <h1>SPORT AI ANALYST</h1>
 <p>Sportska analiza • Prognoze • Statistika</p>
 </header>
 
 <main>
+
 <div class="panel">
 <h2>Odabir sporta</h2>
+
 <select id="sport" onchange="render()">
 <option value="Football">⚽ Nogomet</option>
 <option value="Tennis">🎾 Tenis</option>
@@ -44,16 +120,32 @@ button:hover{background:#0aa887}
 <option value="NHL">🏒 NHL</option>
 <option value="Hockey">🏒 Hokej</option>
 </select>
+
 <input type="date" id="date">
+
 <button onclick="render()">Prikaži</button>
 </div>
 
 <div class="panel">
 <h2>Pregled prognoza</h2>
+
 <div class="stats">
-<div class="stat"><strong id="total">0</strong>Analizirano</div>
-<div class="stat"><strong id="wins">0</strong>Pogođeno</div>
-<div class="stat"><strong id="rate">0%</strong>Uspješnost</div>
+
+<div class="stat">
+<strong id="total">0</strong>
+Analizirano
+</div>
+
+<div class="stat">
+<strong id="wins">0</strong>
+Pogođeno
+</div>
+
+<div class="stat">
+<strong id="rate">0%</strong>
+Uspješnost
+</div>
+
 </div>
 </div>
 
@@ -67,43 +159,62 @@ button:hover{background:#0aa887}
 <h2>Moje prognoze</h2>
 <div id="history">Još nema spremljenih prognoza.</div>
 </div>
+
 </main>
 
 <script>
+
 const API="https://sports-analysis.amitavamandi2.workers.dev";
 
 const samples={
+
 Tennis:[
 ["Player A","Player B","2","1:2","Over 22.5 gemova"],
 ["Player C","Player D","1","2:0","Under 22.5 gemova"]
 ],
+
 NBA:[
 ["Boston Celtics","Miami Heat","1","112:105","Over 215.5"],
 ["Denver Nuggets","LA Lakers","1","118:110","Over 220.5"]
 ],
+
 Basketball:[
 ["Team A","Team B","1","85:78","Over 155.5"],
 ["Team C","Team D","2","72:80","Under 155.5"]
 ],
+
 NHL:[
 ["Boston Bruins","Toronto Maple Leafs","1","4:2","Over 5.5"],
 ["New York Rangers","Florida Panthers","2","2:3","Under 6.5"]
 ],
+
 Hockey:[
 ["Team A","Team B","1","4:2","Over 5.5"]
 ]
+
 };
 
-let history=JSON.parse(localStorage.getItem("sportHistory")||"[]");
+let history=[];
+
+try{
+history=JSON.parse(localStorage.getItem("sportHistory")||"[]");
+if(!Array.isArray(history))history=[];
+}catch(error){
+history=[];
+}
 
 function localDate(){
 const d=new Date();
 const offset=d.getTimezoneOffset();
-return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);
+return new Date(d.getTime()-offset*60000)
+.toISOString().slice(0,10);
 }
 
+
+// GLAVNA FUNKCIJA
+
 async function render(){
-async function render(){
+
 const sport=document.getElementById("sport").value;
 const date=document.getElementById("date").value;
 const container=document.getElementById("matches");
@@ -112,14 +223,16 @@ const info=document.getElementById("info");
 container.innerHTML="";
 
 if(sport==="Football"){
+
 if(!date){
 info.textContent="Odaberi datum.";
 return;
 }
 
-info.textContent="Učitavanje nogometnih utakmica...";
+info.textContent="Učitavanje stvarnih nogometnih utakmica...";
 
 try{
+
 const response=await fetch(
 `${API}/sportsdb?date=${date}`
 );
@@ -141,6 +254,7 @@ return;
 }
 
 games.forEach(g=>{
+
 const div=document.createElement("div");
 div.className="match";
 
@@ -151,13 +265,16 @@ const competition=g.strLeague||"Natjecanje";
 let time="Vrijeme nije dostupno";
 
 if(g.strTimestamp){
-time=new Date(g.strTimestamp+"Z").toLocaleTimeString(
+
+time=new Date(g.strTimestamp).toLocaleTimeString(
 "hr-HR",
 {
 hour:"2-digit",
 minute:"2-digit",
 timeZone:"Europe/Zagreb"
-});
+}
+);
+
 }
 
 const statusNames={
@@ -176,28 +293,43 @@ g.strStatus||"Nepoznat";
 
 let result="Još nema rezultata";
 
-if(g.intHomeScore!==null&&g.intAwayScore!==null){
+if(
+g.intHomeScore!==null &&
+g.intHomeScore!==undefined &&
+g.intAwayScore!==null &&
+g.intAwayScore!==undefined
+){
 result=`${g.intHomeScore} : ${g.intAwayScore}`;
 }
 
 div.innerHTML=`
-<span class="tag">THESPORTSDB • STVARNI PODACI</span>
+<span class="tag">STVARNI PODACI</span>
 <h3>${home} – ${away}</h3>
 <p>${competition}</p>
 <p>Početak: ${time} (Hrvatska)</p>
 <p>Status: ${status}</p>
-<p>Rezultat: <span class="prediction">${result}</span></p>
+<p>Rezultat:
+<span class="prediction">${result}</span>
+</p>
 `;
 
 container.appendChild(div);
+
 });
 
 }catch(error){
+
 info.textContent="Greška pri dohvaćanju utakmica.";
 container.textContent=error.message;
+
 }
+
 return;
+
 }
+
+
+// DEMO ZA OSTALE SPORTOVE
 
 const games=samples[sport]||[];
 
@@ -205,76 +337,126 @@ info.textContent=
 "Demo podaci – nisu stvarni raspored ni AI prognoze.";
 
 games.forEach((g,i)=>{
+
 const div=document.createElement("div");
 div.className="match";
+
 div.innerHTML=`
 <span class="tag">${sport} DEMO</span>
 <h3>${g[0]} – ${g[1]}</h3>
-<p>Prognoza pobjednika: <span class="prediction">${g[2]}</span></p>
+<p>Prognoza pobjednika:
+<span class="prediction">${g[2]}</span></p>
 <p>Predviđeni rezultat: ${g[3]}</p>
 <p>Over / Under: ${g[4]}</p>
 <p class="small">Ogledna prognoza – nije AI izračun.</p>
-<button onclick="save(${i})">Spremi prognozu</button>`;
+<button onclick="save(${i})">Spremi prognozu</button>
+`;
+
 container.appendChild(div);
+
 });
+
 }
 
 
+// SPREMANJE PROGNOZE
+
 function save(i){
+
 const sport=document.getElementById("sport").value;
 const g=samples[sport][i];
 
-if(history.some(x=>x.sport===sport&&x.a===g[0]&&x.b===g[1])){
+if(history.some(x=>
+x.sport===sport&&x.a===g[0]&&x.b===g[1]
+)){
 alert("Ova prognoza je već spremljena.");
 return;
 }
 
 history.push({
-sport:sport,a:g[0],b:g[1],
-pick:g[2],score:g[3],total:g[4],
+sport:sport,
+a:g[0],
+b:g[1],
+pick:g[2],
+score:g[3],
+total:g[4],
 status:"Čeka rezultat"
 });
 
 localStorage.setItem("sportHistory",JSON.stringify(history));
+
 updateHistory();
+
 }
 
+
+// POVIJEST PROGNOZA
+
 function updateHistory(){
+
 const box=document.getElementById("history");
+
 box.innerHTML="";
 
 history.forEach((h,i)=>{
+
 const div=document.createElement("div");
 div.className="match";
+
 div.innerHTML=`
 <b>${h.a} – ${h.b}</b>
 <p>${h.sport} | ${h.pick} | ${h.score} | ${h.total}</p>
 <p>Status: ${h.status}</p>
 <button onclick="settle(${i},'Pogođeno')">Pogođeno</button>
-<button onclick="settle(${i},'Promašeno')">Promašeno</button>`;
+<button onclick="settle(${i},'Promašeno')">Promašeno</button>
+`;
+
 box.appendChild(div);
+
 });
 
 const done=history.filter(x=>x.status!=="Čeka rezultat");
-const wins=done.filter(x=>x.status==="Pogođeno").length;
+
+const wins=done.filter(x=>
+x.status==="Pogođeno"
+).length;
 
 document.getElementById("total").textContent=history.length;
 document.getElementById("wins").textContent=wins;
-document.getElementById("rate").textContent=
-done.length?Math.round(wins/done.length*100)+"%":"0%";
 
-if(!history.length)box.textContent="Još nema spremljenih prognoza.";
+document.getElementById("rate").textContent=
+done.length
+?Math.round(wins/done.length*100)+"%"
+:"0%";
+
+if(!history.length){
+box.textContent="Još nema spremljenih prognoza.";
 }
+
+}
+
+
+// REZULTAT PROGNOZE
 
 function settle(i,status){
+
 history[i].status=status;
+
 localStorage.setItem("sportHistory",JSON.stringify(history));
+
 updateHistory();
+
 }
 
+
+// POKRETANJE APLIKACIJE
+
 document.getElementById("date").value=localDate();
-render();
+
 updateHistory();
+
+render();
+
 </script>
 </body>
 </html>
