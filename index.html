@@ -103,6 +103,7 @@ return new Date(d.getTime()-offset*60000).toISOString().slice(0,10);
 }
 
 async function render(){
+async function render(){
 const sport=document.getElementById("sport").value;
 const date=document.getElementById("date").value;
 const container=document.getElementById("matches");
@@ -116,11 +117,11 @@ info.textContent="Odaberi datum.";
 return;
 }
 
-info.textContent="Učitavanje stvarnih nogometnih utakmica...";
+info.textContent="Učitavanje nogometnih utakmica...";
 
 try{
 const response=await fetch(
-`${API}/matches?dateFrom=${date}&dateTo=${date}`
+`${API}/sportsdb?date=${date}`
 );
 
 if(!response.ok){
@@ -128,12 +129,14 @@ throw new Error("API greška: "+response.status);
 }
 
 const data=await response.json();
-const games=data.matches||[];
+const games=data.events||[];
 
-info.textContent=`Stvarni podaci • ${games.length} pronađenih utakmica • ${date}`;
+info.textContent=
+`TheSportsDB • ${games.length} utakmica • ${date}`;
 
 if(games.length===0){
-container.textContent="Nema utakmica u natjecanjima dostupnima API paketu za odabrani datum.";
+container.textContent=
+"Nema dostupnih utakmica za odabrani datum.";
 return;
 }
 
@@ -141,37 +144,51 @@ games.forEach(g=>{
 const div=document.createElement("div");
 div.className="match";
 
-const home=g.homeTeam?.name||"Domaćin";
-const away=g.awayTeam?.name||"Gost";
-const competition=g.competition?.name||"Natjecanje";
-const time=g.utcDate?
-new Date(g.utcDate).toLocaleTimeString("hr-HR",{
-hour:"2-digit",minute:"2-digit",timeZone:"Europe/Zagreb"
-}):"Vrijeme nije dostupno";
+const home=g.strHomeTeam||"Domaćin";
+const away=g.strAwayTeam||"Gost";
+const competition=g.strLeague||"Natjecanje";
+
+let time="Vrijeme nije dostupno";
+
+if(g.strTimestamp){
+time=new Date(g.strTimestamp+"Z").toLocaleTimeString(
+"hr-HR",
+{
+hour:"2-digit",
+minute:"2-digit",
+timeZone:"Europe/Zagreb"
+});
+}
 
 const statusNames={
-SCHEDULED:"Zakazana",
-TIMED:"Vrijeme određeno",
-IN_PLAY:"U tijeku",
-PAUSED:"Pauza",
-FINISHED:"Završena",
-POSTPONED:"Odgođena",
-CANCELLED:"Otkazana",
-SUSPENDED:"Prekinuta"
+NS:"Zakazana",
+FT:"Završena",
+LIVE:"U tijeku",
+HT:"Poluvrijeme",
+AET:"Završena nakon produžetaka",
+PEN:"Penali",
+POST:"Odgođena",
+CANC:"Otkazana"
 };
 
-const score=g.score?.fullTime;
-const result=score&&score.home!==null&&score.away!==null
-?`${score.home} : ${score.away}`:"Još nema rezultata";
+const status=statusNames[g.strStatus]||
+g.strStatus||"Nepoznat";
+
+let result="Još nema rezultata";
+
+if(g.intHomeScore!==null&&g.intAwayScore!==null){
+result=`${g.intHomeScore} : ${g.intAwayScore}`;
+}
 
 div.innerHTML=`
-<span class="tag">STVARNI PODACI</span>
+<span class="tag">THESPORTSDB • STVARNI PODACI</span>
 <h3>${home} – ${away}</h3>
 <p>${competition}</p>
 <p>Početak: ${time} (Hrvatska)</p>
-<p>Status: ${statusNames[g.status]||g.status||"Nepoznat"}</p>
+<p>Status: ${status}</p>
 <p>Rezultat: <span class="prediction">${result}</span></p>
 `;
+
 container.appendChild(div);
 });
 
@@ -183,7 +200,9 @@ return;
 }
 
 const games=samples[sport]||[];
-info.textContent="Demo podaci – nisu stvarni raspored ni AI prognoze.";
+
+info.textContent=
+"Demo podaci – nisu stvarni raspored ni AI prognoze.";
 
 games.forEach((g,i)=>{
 const div=document.createElement("div");
@@ -199,6 +218,7 @@ div.innerHTML=`
 container.appendChild(div);
 });
 }
+
 
 function save(i){
 const sport=document.getElementById("sport").value;
