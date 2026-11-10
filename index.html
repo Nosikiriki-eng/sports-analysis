@@ -16,23 +16,22 @@ main{max-width:1200px;margin:auto;padding:18px}
 select,input,button{padding:12px;border-radius:7px;border:0;margin:5px;background:#293c55;color:white;max-width:100%}
 button{background:#087f69;cursor:pointer;font-weight:bold}
 button:hover{background:#0aa887}
+button:disabled{opacity:.5;cursor:wait}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .stat{background:#293c55;padding:15px;border-radius:9px;text-align:center}
 .stat strong{display:block;font-size:25px;color:#20c997}
 .match{background:#24364e;padding:16px;border-radius:10px;margin:12px 0}
 .match h3{margin-top:0}
-.prediction{color:#20c997;font-weight:bold}
 .small{color:#aab8ca;font-size:13px}
 .tag{display:inline-block;background:#087f69;padding:5px 9px;border-radius:5px;font-size:12px}
 .filters{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .filters select{flex:1;min-width:200px}
-.status{color:#20c997;font-weight:bold}
 .error{color:#ff8585}
 .matchtop{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .teams{font-size:19px;font-weight:bold;margin:16px 0}
 .score{font-size:27px;color:#20c997;font-weight:bold}
 .actions{display:flex;gap:8px;flex-wrap:wrap}
-button:disabled{opacity:.5;cursor:wait}
+.status{color:#20c997}
 @media(max-width:550px){
 .stats{grid-template-columns:1fr 1fr}
 .filters select{width:100%}
@@ -52,12 +51,12 @@ button:disabled{opacity:.5;cursor:wait}
 <h2>Odabir sporta</h2>
 
 <select id="sport">
-<option value="Football">⚽ Nogomet</option>
-<option value="Tennis">🎾 Tenis</option>
-<option value="NBA">🏀 NBA</option>
-<option value="Basketball">🏀 Košarka</option>
-<option value="NHL">🏒 NHL</option>
-<option value="Hockey">🏒 Hokej</option>
+<option value="Football">Nogomet</option>
+<option value="Tennis">Tenis</option>
+<option value="NBA">NBA</option>
+<option value="Basketball">Košarka</option>
+<option value="NHL">NHL</option>
+<option value="Hockey">Hokej</option>
 </select>
 
 <div id="footballFilters">
@@ -126,461 +125,567 @@ Uspješnost
 <script>
 "use strict";
 
-const API="https://sports-analysis.amitavamandi2.workers.dev";
+const API = "https://sports-analysis.amitavamandi2.workers.dev";
 
-const $=id=>document.getElementById(id);
+const $ = id => document.getElementById(id);
 
-let fixtures=[];
-let history=[];
+let fixtures = [];
+let history = [];
 
-try{
-history=JSON.parse(localStorage.getItem("sportHistory")||"[]");
-if(!Array.isArray(history))history=[];
-}catch(e){history=[];}
-
-function localDate(){
-const d=new Date();
-return new Date(d.getTime()-d.getTimezoneOffset()*60000)
-.toISOString().slice(0,10);
+try {
+  const saved = JSON.parse(localStorage.getItem("sportHistory") || "[]");
+  history = Array.isArray(saved) ? saved : [];
+} catch (error) {
+  history = [];
 }
 
-function make(tag,cls,text){
-const el=document.createElement(tag);
-if(cls)el.className=cls;
-if(text!==undefined)el.textContent=text;
-return el;
+function localDate() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  return new Date(now.getTime() - offset * 60000)
+    .toISOString()
+    .slice(0, 10);
 }
 
-function classify(league){
-const name=(league.name||"").toLowerCase();
-const country=(league.country||"").toLowerCase();
+function make(tag, className, text) {
+  const element = document.createElement(tag);
 
-const nationalKeywords=[
-"world cup qualification","world cup qualifiers",
-"euro qualification","european championship",
-"nations league","international friendly",
-"africa cup of nations","asian cup",
-"copa america","gold cup","world cup",
-"u-17","u-20","u-23","women's national"
-];
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
 
-if(nationalKeywords.some(x=>name.includes(x)))
-return "nationalTeams";
-
-const internationalKeywords=[
-"champions league","europa league",
-"conference league","copa libertadores",
-"copa sudamericana","recopa",
-"club world cup","intercontinental cup",
-"super cup","afc champions","caf champions",
-"concacaf champions","libertadores"
-];
-
-if(internationalKeywords.some(x=>name.includes(x)))
-return "international";
-
-const cupKeywords=[
-"cup","copa","coupe","pokal","coppa",
-"copa do brasil","fa cup","league cup",
-"copa del rey","dfb-pokal","knockout"
-];
-
-if(cupKeywords.some(x=>name.includes(x)))
-return "cups";
-
-if(country==="world"||country==="international")
-return "international";
-
-return "leagues";
+  return element;
 }
 
-function updateCompetitions(){
-const category=$("category").value;
-const select=$("competition");
-const previous=select.value;
+function classify(league) {
+  const name = (league.name || "").toLowerCase();
+  const country = (league.country || "").toLowerCase();
 
-select.innerHTML="";
-const first=make("option","","Sva natjecanja");
-first.value="";
-select.appendChild(first);
+  const nationalKeywords = [
+    "world cup qualification",
+    "world cup qualifiers",
+    "euro qualification",
+    "european championship",
+    "nations league",
+    "international friendly",
+    "africa cup of nations",
+    "asian cup",
+    "copa america",
+    "gold cup",
+    "world cup",
+    "u-17",
+    "u-20",
+    "u-23",
+    "women's national"
+  ];
 
-const available=fixtures
-.filter(f=>{
-return category==="all"||
-classify(f.league)===category;
-})
-.map(f=>({
-id:f.league.id,
-name:f.league.name,
-country:f.league.country
-}));
+  if (nationalKeywords.some(word => name.includes(word))) {
+    return "nationalTeams";
+  }
 
-const unique=new Map();
-available.forEach(x=>{
-unique.set(x.id,x);
+  const internationalKeywords = [
+    "champions league",
+    "europa league",
+    "conference league",
+    "copa libertadores",
+    "copa sudamericana",
+    "recopa",
+    "club world cup",
+    "intercontinental cup",
+    "afc champions",
+    "caf champions",
+    "concacaf champions"
+  ];
+
+  if (internationalKeywords.some(word => name.includes(word))) {
+    return "international";
+  }
+
+  const cupKeywords = [
+    "cup",
+    "copa",
+    "coupe",
+    "pokal",
+    "coppa",
+    "fa cup",
+    "league cup",
+    "copa del rey",
+    "dfb-pokal",
+    "knockout"
+  ];
+
+  if (cupKeywords.some(word => name.includes(word))) {
+    return "cups";
+  }
+
+  if (country === "world" || country === "international") {
+    return "international";
+  }
+
+  return "leagues";
+}
+
+function updateCompetitions() {
+  const category = $("category").value;
+  const select = $("competition");
+  const previous = select.value;
+
+  select.innerHTML = "";
+
+  const first = make("option", "", "Sva natjecanja");
+  first.value = "";
+  select.appendChild(first);
+
+  const unique = new Map();
+
+  fixtures.forEach(fixture => {
+    const league = fixture.league || {};
+
+    if (category !== "all" && classify(league) !== category) {
+      return;
+    }
+
+    if (league.id === undefined || league.id === null) return;
+
+    unique.set(String(league.id), {
+      id: league.id,
+      name: league.name || "Nepoznato natjecanje",
+      country: league.country || ""
+    });
+  });
+
+  [...unique.values()]
+    .sort((a, b) =>
+      a.country.localeCompare(b.country) ||
+      a.name.localeCompare(b.name)
+    )
+    .forEach(item => {
+      const option = make(
+        "option",
+        "",
+        (item.country ? item.country + " – " : "") + item.name
+      );
+
+      option.value = String(item.id);
+      select.appendChild(option);
+    });
+
+  if ([...select.options].some(option => option.value === previous)) {
+    select.value = previous;
+  }
+}
+
+function getStatus(fixture) {
+  const code = fixture.fixture?.status?.short || "";
+
+  const names = {
+    NS: "Zakazana",
+    TBD: "Vrijeme nije određeno",
+    "1H": "Prvo poluvrijeme",
+    "2H": "Drugo poluvrijeme",
+    HT: "Poluvrijeme",
+    ET: "Produžeci",
+    BT: "Pauza produžetaka",
+    P: "Penali",
+    LIVE: "U tijeku",
+    FT: "Završena",
+    AET: "Završena nakon produžetaka",
+    PEN: "Završena penalima",
+    PST: "Odgođena",
+    POST: "Odgođena",
+    CANC: "Otkazana",
+    ABD: "Prekinuta",
+    SUSP: "Suspendirana",
+    AWD: "Registrirana",
+    WO: "Bez borbe"
+  };
+
+  return names[code] || fixture.fixture?.status?.long || code || "Nepoznat";
+}
+
+function getTime(fixture) {
+  const date = fixture.fixture?.date;
+
+  if (!date) return "Vrijeme nije dostupno";
+
+  return new Date(date).toLocaleTimeString("hr-HR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Zagreb"
+  });
+}
+
+function getScore(fixture) {
+  const home = fixture.goals?.home;
+  const away = fixture.goals?.away;
+
+  if (home === null || home === undefined ||
+      away === null || away === undefined) {
+    return null;
+  }
+
+  return home + " : " + away;
+}
+
+function renderFixture(fixture) {
+  const div = make("div", "match");
+
+  const top = make("div", "matchtop");
+
+  top.appendChild(make(
+    "span",
+    "tag",
+    fixture.league?.country || "Natjecanje"
+  ));
+
+  top.appendChild(make(
+    "span",
+    "small",
+    fixture.league?.name || ""
+  ));
+
+  div.appendChild(top);
+
+  const home = fixture.teams?.home?.name || "Domaćin";
+  const away = fixture.teams?.away?.name || "Gost";
+
+  div.appendChild(make("div", "teams", home + " – " + away));
+
+  div.appendChild(make(
+    "div",
+    "score",
+    getScore(fixture) || "VS"
+  ));
+
+  div.appendChild(make(
+    "p",
+    "small",
+    "Vrijeme: " + getTime(fixture) + " (Hrvatska)"
+  ));
+
+  div.appendChild(make(
+    "p",
+    "small",
+    "Status: " + getStatus(fixture)
+  ));
+
+  if (fixture.score?.penalty &&
+      fixture.fixture?.status?.short === "PEN") {
+    div.appendChild(make(
+      "p",
+      "small",
+      "Penali: " + fixture.score.penalty.home +
+      " : " + fixture.score.penalty.away
+    ));
+  }
+
+  if (fixture.score?.halftime) {
+    const half = fixture.score.halftime;
+
+    if (half.home !== null && half.away !== null) {
+      div.appendChild(make(
+        "p",
+        "small",
+        "Poluvrijeme: " + half.home + " : " + half.away
+      ));
+    }
+  }
+
+  if (fixture.league?.round) {
+    div.appendChild(make(
+      "p",
+      "small",
+      "Kolo: " + fixture.league.round
+    ));
+  }
+
+  if (fixture.fixture?.venue?.name) {
+    div.appendChild(make(
+      "p",
+      "small",
+      "Stadion: " + fixture.fixture.venue.name
+    ));
+  }
+
+  const button = make("button", "", "SPREMI U MOJE PROGNOZE");
+  button.addEventListener("click", () => saveFixture(fixture));
+
+  div.appendChild(button);
+
+  return div;
+}
+
+function filterFixtures() {
+  const category = $("category").value;
+  const leagueId = $("competition").value;
+
+  return fixtures.filter(fixture => {
+    const league = fixture.league || {};
+
+    const categoryMatch =
+      category === "all" || classify(league) === category;
+
+    const leagueMatch =
+      !leagueId || String(league.id) === leagueId;
+
+    return categoryMatch && leagueMatch;
+  }).sort((a, b) =>
+    new Date(a.fixture?.date || 0) -
+    new Date(b.fixture?.date || 0)
+  );
+}
+
+function displayFixtures() {
+  const container = $("matches");
+  container.innerHTML = "";
+
+  const filtered = filterFixtures();
+
+  $("info").textContent =
+    "API-Football | " + filtered.length +
+    " utakmica | " + $("date").value +
+    " | Ukupno učitano: " + fixtures.length;
+
+  if (!filtered.length) {
+    container.appendChild(make(
+      "p",
+      "small",
+      "Nema utakmica za odabrani datum i filter."
+    ));
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  filtered.forEach(fixture => {
+    fragment.appendChild(renderFixture(fixture));
+  });
+
+  container.appendChild(fragment);
+}
+
+async function render() {
+  const sport = $("sport").value;
+  const date = $("date").value;
+  const container = $("matches");
+  const info = $("info");
+  const button = $("showButton");
+
+  container.innerHTML = "";
+
+  $("footballFilters").style.display =
+    sport === "Football" ? "block" : "none";
+
+  if (sport !== "Football") {
+    info.textContent =
+      "Ovaj sport još nije povezan sa stvarnim izvorom podataka.";
+
+    container.appendChild(make(
+      "p",
+      "small",
+      "Sljedeća faza: povezivanje stvarnih rasporeda za tenis, NBA, košarku, NHL i hokej."
+    ));
+    return;
+  }
+
+  if (!date) {
+    info.textContent = "Odaberi datum.";
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "UČITAVANJE...";
+  info.textContent = "Dohvaćam podatke iz API-Footballa...";
+
+  try {
+    const url = API + "/football/fixtures?date=" +
+      encodeURIComponent(date);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      },
+      cache: "no-store"
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.errors?.rateLimit ||
+        data.error ||
+        "HTTP greška: " + response.status
+      );
+    }
+
+    if (data.errors && Object.keys(data.errors).length > 0) {
+      const message = typeof data.errors === "object"
+        ? Object.values(data.errors).join(", ")
+        : String(data.errors);
+
+      throw new Error(message);
+    }
+
+    if (Array.isArray(data.response)) {
+      fixtures = data.response;
+    } else if (Array.isArray(data.fixtures)) {
+      fixtures = data.fixtures;
+    } else if (Array.isArray(data.events)) {
+      fixtures = data.events;
+    } else if (Array.isArray(data)) {
+      fixtures = data;
+    } else {
+      throw new Error("API nije vratio prepoznatljivu listu utakmica.");
+    }
+
+    updateCompetitions();
+    displayFixtures();
+
+  } catch (error) {
+    console.error("SPORT AI ANALYST:", error);
+
+    fixtures = [];
+    $("competition").innerHTML =
+      '<option value="">Sva natjecanja</option>';
+
+    info.textContent = "Greška pri učitavanju podataka.";
+
+    container.appendChild(make(
+      "p",
+      "error",
+      error.message || "Nepoznata greška."
+    ));
+
+  } finally {
+    button.disabled = false;
+    button.textContent = "PRIKAŽI UTAKMICE";
+  }
+}
+
+function saveFixture(fixture) {
+  const id = fixture.fixture?.id;
+
+  if (history.some(item => item.id === id)) {
+    alert("Ova utakmica je već spremljena.");
+    return;
+  }
+
+  history.push({
+    id: id,
+    sport: "Football",
+    a: fixture.teams?.home?.name || "Domaćin",
+    b: fixture.teams?.away?.name || "Gost",
+    league: fixture.league?.name || "",
+    date: fixture.fixture?.date || "",
+    pick: "Nije odabrano",
+    score: "Nije odabrano",
+    total: "Nije odabrano",
+    status: "Čeka rezultat"
+  });
+
+  saveHistory();
+  alert("Utakmica je spremljena.");
+}
+
+function saveHistory() {
+  try {
+    localStorage.setItem("sportHistory", JSON.stringify(history));
+  } catch (error) {
+    alert("Spremanje nije uspjelo. Provjeri prostor preglednika.");
+  }
+
+  updateHistory();
+}
+
+function settle(index, status) {
+  history[index].status = status;
+  saveHistory();
+}
+
+function updateHistory() {
+  const box = $("history");
+  box.innerHTML = "";
+
+  history.forEach((item, index) => {
+    const div = make("div", "match");
+
+    div.appendChild(make(
+      "b",
+      "",
+      item.a + " – " + item.b
+    ));
+
+    div.appendChild(make(
+      "p",
+      "small",
+      (item.league || item.sport) + " | " + item.date
+    ));
+
+    div.appendChild(make(
+      "p",
+      "small",
+      "Prognoza: " + item.pick + " | Rezultat: " + item.score
+    ));
+
+    div.appendChild(make(
+      "p",
+      "small",
+      "Status: " + item.status
+    ));
+
+    const buttons = make("div", "actions");
+
+    const win = make("button", "", "Pogođeno");
+    win.addEventListener("click", () => settle(index, "Pogođeno"));
+
+    const lose = make("button", "", "Promašeno");
+    lose.addEventListener("click", () => settle(index, "Promašeno"));
+
+    const remove = make("button", "", "Obriši");
+    remove.addEventListener("click", () => {
+      history.splice(index, 1);
+      saveHistory();
+    });
+
+    buttons.append(win, lose, remove);
+    div.appendChild(buttons);
+    box.appendChild(div);
+  });
+
+  const completed = history.filter(item =>
+    item.status === "Pogođeno" ||
+    item.status === "Promašeno"
+  );
+
+  const wins = completed.filter(item =>
+    item.status === "Pogođeno"
+  ).length;
+
+  $("total").textContent = history.length;
+  $("wins").textContent = wins;
+
+  $("rate").textContent = completed.length
+    ? Math.round(wins / completed.length * 100) + "%"
+    : "0%";
+
+  if (!history.length) {
+    box.textContent = "Još nema spremljenih prognoza.";
+  }
+}
+
+$("showButton").addEventListener("click", render);
+$("refreshButton").addEventListener("click", render);
+
+$("category").addEventListener("change", () => {
+  updateCompetitions();
+  displayFixtures();
 });
 
-[...unique.values()]
-.sort((a,b)=>
-(a.country||"").localeCompare(b.country||"")||
-(a.name||"").localeCompare(b.name||"")
-)
-.forEach(x=>{
-const option=make(
-"option",
-"",
-(x.country?x.country+" – ":"")+x.name
-);
-option.value=String(x.id);
-select.appendChild(option);
-});
-
-if([...select.options].some(x=>x.value===previous)){
-select.value=previous;
-}
-}
-
-function getStatus(f){
-const s=f.fixture?.status?.short||"";
-const names={
-NS:"Zakazana",
-TBD:"Vrijeme nije određeno",
-1H:"Prvo poluvrijeme",
-2H:"Drugo poluvrijeme",
-HT:"Poluvrijeme",
-ET:"Produžeci",
-BT:"Pauza produžetaka",
-P:"Penali",
-LIVE:"U tijeku",
-FT:"Završena",
-AET:"Završena nakon produžetaka",
-PEN:"Završena penalima",
-PST:"Odgođena",
-POST:"Odgođena",
-CANC:"Otkazana",
-ABD:"Prekinuta",
-SUSP:"Suspendirana",
-AWD:"Registrirana",
-WO:"Bez borbe"
-};
-return names[s]||f.fixture?.status?.long||s||"Nepoznat";
-}
-
-function getTime(f){
-const date=f.fixture?.date;
-if(!date)return "Vrijeme nije dostupno";
-
-return new Date(date).toLocaleTimeString("hr-HR",{
-hour:"2-digit",
-minute:"2-digit",
-timeZone:"Europe/Zagreb"
-});
-}
-
-function getScore(f){
-const h=f.goals?.home;
-const a=f.goals?.away;
-
-if(h===null||h===undefined||a===null||a===undefined)
-return null;
-
-return h+" : "+a;
-}
-
-function renderFixture(f){
-const div=make("div","match");
-
-const top=make("div","matchtop");
-top.appendChild(make("span","tag",f.league?.country||"Natjecanje"));
-top.appendChild(make("span","small",f.league?.name||""));
-div.appendChild(top);
-
-const home=f.teams?.home?.name||"Domaćin";
-const away=f.teams?.away?.name||"Gost";
-
-div.appendChild(make("div","teams",home+"  –  "+away));
-
-const score=getScore(f);
-const scoreBox=make("div","score",score||"VS");
-div.appendChild(scoreBox);
-
-div.appendChild(make("p","small","Vrijeme: "+getTime(f)+" (Hrvatska)"));
-div.appendChild(make("p","small","Status: "+getStatus(f)));
-
-if(f.fixture?.status?.short==="PEN"&&f.score?.penalty){
-div.appendChild(make(
-"p","small",
-"Penali: "+f.score.penalty.home+" : "+f.score.penalty.away
-));
-}
-
-if(f.fixture?.status?.short==="HT"&&f.score?.halftime){
-div.appendChild(make(
-"p","small",
-"Poluvrijeme: "+
-f.score.halftime.home+" : "+f.score.halftime.away
-));
-}
-
-if(f.league?.round){
-div.appendChild(make("p","small","Kolo: "+f.league.round));
-}
-
-if(f.fixture?.venue?.name){
-div.appendChild(make(
-"p","small",
-"Stadion: "+f.fixture.venue.name
-));
-}
-
-const button=make("button","","SPREMI U MOJE PROGNOZE");
-button.addEventListener("click",()=>saveFixture(f));
-div.appendChild(button);
-
-return div;
-}
-
-async function render(){
-const sport=$("sport").value;
-const date=$("date").value;
-const container=$("matches");
-const info=$("info");
-
-container.innerHTML="";
-$("footballFilters").style.display=
-sport==="Football"?"block":"none";
-
-if(sport!=="Football"){
-info.textContent=
-"Sport nije još povezan sa stvarnim izvorom podataka. Demo prognoze su isključene.";
-container.appendChild(make(
-"p","small",
-"Sljedeća faza: povezivanje stvarnih rasporeda za tenis, NBA, košarku, NHL i hokej."
-));
-return;
-}
-
-if(!date){
-info.textContent="Odaberi datum.";
-return;
-}
-
-const button=$("showButton");
-button.disabled=true;
-button.textContent="UČITAVANJE...";
-
-info.textContent="Dohvaćam podatke iz API-Footballa...";
-
-try{
-
-const url=API+"/football/fixtures?date="+
-encodeURIComponent(date);
-
-const response=await fetch(url,{
-method:"GET",
-headers:{"Accept":"application/json"}
-});
-
-if(!response.ok){
-throw new Error("HTTP greška: "+response.status);
-}
-
-const data=await response.json();
-
-// Podržavamo standardni API-Football odgovor
-// i alternativne oblike odgovora Workera.
-if(Array.isArray(data)){
-fixtures=data;
-}else if(Array.isArray(data.response)){
-fixtures=data.response;
-}else if(Array.isArray(data.fixtures)){
-fixtures=data.fixtures;
-}else if(Array.isArray(data.events)){
-fixtures=data.events;
-}else{
-throw new Error(
-"Odgovor Workera nema prepoznatljivu listu utakmica."
-);
-}
-
-updateCompetitions();
-
-const category=$("category").value;
-const leagueId=$("competition").value;
-
-let filtered=fixtures.filter(f=>{
-const categoryMatch=
-category==="all"||
-classify(f.league||{})===category;
-
-const leagueMatch=
-!leagueId||
-String(f.league?.id)===leagueId;
-
-return categoryMatch&&leagueMatch;
-});
-
-filtered.sort((a,b)=>
-new Date(a.fixture?.date||0)-
-new Date(b.fixture?.date||0)
-);
-
-info.textContent=
-"API-Football | "+filtered.length+
-" utakmica | "+date+
-" | Ukupno učitano: "+fixtures.length;
-
-if(!filtered.length){
-container.appendChild(make(
-"p","small",
-"Nema utakmica za odabrani datum i filter. Pokušaj opciju Sva natjecanja."
-));
-return;
-}
-
-const fragment=document.createDocumentFragment();
-
-filtered.forEach(f=>{
-fragment.appendChild(renderFixture(f));
-});
-
-container.appendChild(fragment);
-
-}catch(error){
-console.error(error);
-info.textContent="Greška pri dohvaćanju podataka.";
-container.appendChild(make(
-"p","error",
-error.message
-));
-}finally{
-button.disabled=false;
-button.textContent="PRIKAŽI UTAKMICE";
-}
-}
-
-function saveFixture(f){
-const id=f.fixture?.id;
-
-if(history.some(x=>x.id===id)){
-alert("Ova utakmica je već spremljena.");
-return;
-}
-
-history.push({
-id:id,
-sport:"Football",
-a:f.teams?.home?.name||"Domaćin",
-b:f.teams?.away?.name||"Gost",
-league:f.league?.name||"",
-date:f.fixture?.date||"",
-pick:"Nije odabrano",
-score:"Nije odabrano",
-total:"Nije odabrano",
-status:"Čeka rezultat"
-});
-
-saveHistory();
-alert("Utakmica je spremljena.");
-}
-
-function saveHistory(){
-localStorage.setItem("sportHistory",JSON.stringify(history));
-updateHistory();
-}
-
-function settle(i,status){
-history[i].status=status;
-saveHistory();
-}
-
-function updateHistory(){
-const box=$("history");
-box.innerHTML="";
-
-history.forEach((h,i)=>{
-const div=make("div","match");
-
-div.appendChild(make("b","",h.a+" – "+h.b));
-div.appendChild(make("p","small",
-(h.league||h.sport)+" | "+h.date
-));
-div.appendChild(make("p","small",
-"Prognoza: "+h.pick+" | Rezultat: "+h.score
-));
-div.appendChild(make("p","small","Status: "+h.status));
-
-const buttons=make("div","actions");
-
-const win=make("button","","Pogođeno");
-win.addEventListener("click",()=>settle(i,"Pogođeno"));
-
-const lose=make("button","","Promašeno");
-lose.addEventListener("click",()=>settle(i,"Promašeno"));
-
-const remove=make("button","","Obriši");
-remove.addEventListener("click",()=>{
-history.splice(i,1);
-saveHistory();
-});
-
-buttons.append(win,lose,remove);
-div.appendChild(buttons);
-box.appendChild(div);
-});
-
-const done=history.filter(x=>
-x.status==="Pogođeno"||x.status==="Promašeno"
-);
-
-const wins=done.filter(x=>x.status==="Pogođeno").length;
-
-$("total").textContent=history.length;
-$("wins").textContent=wins;
-$("rate").textContent=
-done.length?Math.round(wins/done.length*100)+"%":"0%";
-
-if(!history.length){
-box.textContent="Još nema spremljenih prognoza.";
-}
-}
-
-$("showButton").addEventListener("click",render);
-$("refreshButton").addEventListener("click",render);
-
-$("category").addEventListener("change",()=>{
-updateCompetitions();
-renderFiltered();
-});
-
-$("competition").addEventListener("change",render);
-
-$("sport").addEventListener("change",render);
-
-function renderFiltered(){
-if($("sport").value!=="Football")return;
-
-const container=$("matches");
-container.innerHTML="";
-
-const category=$("category").value;
-const leagueId=$("competition").value;
-
-const filtered=fixtures.filter(f=>{
-return (
-(category==="all"||classify(f.league||{})===category)&&
-(!leagueId||String(f.league?.id)===leagueId)
-);
-});
-
-filtered.forEach(f=>container.appendChild(renderFixture(f)));
-
-$("info").textContent=
-"API-Football | "+filtered.length+
-" utakmica | "+$("date").value;
-}
-
-$("date").value=localDate();
+$("competition").addEventListener("change", displayFixtures);
+$("sport").addEventListener("change", render);
+$("date").addEventListener("change", render);
+
+$("date").value = localDate();
 
 updateHistory();
 render();
