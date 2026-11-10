@@ -12,11 +12,11 @@ export default {
     }
 
     const url = new URL(request.url);
-    let apiUrl;
 
-    // TheSportsDB – nogomet
+    // TheSportsDB – nogomet po datumu i ligi
     if (url.pathname === "/sportsdb") {
       const date = url.searchParams.get("date");
+      const league = url.searchParams.get("league");
 
       if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return Response.json(
@@ -25,8 +25,18 @@ export default {
         );
       }
 
-      apiUrl =
-        `https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d=${date}&s=Soccer`;
+      const params = new URLSearchParams({
+        d: date,
+        s: "Soccer"
+      });
+
+      if (league) {
+        params.set("l", league);
+      }
+
+      const apiUrl =
+        "https://www.thesportsdb.com/api/v1/json/123/eventsday.php?" +
+        params.toString();
 
       const response = await fetch(apiUrl);
 
@@ -40,13 +50,15 @@ export default {
       });
     }
 
-    // Existing Football-Data API
+    // Football-Data API
     if (!env.FOOTBALL_DATA_TOKEN) {
       return Response.json(
         { error: "Missing FOOTBALL_DATA_TOKEN" },
         { status: 500, headers: cors }
       );
     }
+
+    let apiUrl;
 
     if (url.pathname === "/competitions") {
       apiUrl = "https://api.football-data.org/v4/competitions";
@@ -63,7 +75,10 @@ export default {
       }
 
       apiUrl =
-        `https://api.football-data.org/v4/matches?dateFrom=${from}&dateTo=${to}`;
+        "https://api.football-data.org/v4/matches?dateFrom=" +
+        encodeURIComponent(from) +
+        "&dateTo=" +
+        encodeURIComponent(to);
 
     } else {
       return Response.json(
