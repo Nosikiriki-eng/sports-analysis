@@ -1,17 +1,46 @@
+
 export default {
   async fetch(request, env) {
-    const origin = request.headers.get("Origin") || "*";
     const cors = {
-      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Vary": "Origin"
+      "Access-Control-Allow-Headers": "Content-Type"
     };
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: cors });
     }
 
+    const url = new URL(request.url);
+    let apiUrl;
+
+    // TheSportsDB – nogomet
+    if (url.pathname === "/sportsdb") {
+      const date = url.searchParams.get("date");
+
+      if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return Response.json(
+          { error: "Valid date required: YYYY-MM-DD" },
+          { status: 400, headers: cors }
+        );
+      }
+
+      apiUrl =
+        `https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d=${date}&s=Soccer`;
+
+      const response = await fetch(apiUrl);
+
+      return new Response(await response.text(), {
+        status: response.status,
+        headers: {
+          ...cors,
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=300"
+        }
+      });
+    }
+
+    // Existing Football-Data API
     if (!env.FOOTBALL_DATA_TOKEN) {
       return Response.json(
         { error: "Missing FOOTBALL_DATA_TOKEN" },
@@ -19,11 +48,9 @@ export default {
       );
     }
 
-    const url = new URL(request.url);
-    let apiUrl;
-
     if (url.pathname === "/competitions") {
       apiUrl = "https://api.football-data.org/v4/competitions";
+
     } else if (url.pathname === "/matches") {
       const from = url.searchParams.get("dateFrom");
       const to = url.searchParams.get("dateTo");
@@ -35,7 +62,9 @@ export default {
         );
       }
 
-      apiUrl = `https://api.football-data.org/v4/matches?dateFrom=${from}&dateTo=${to}`;
+      apiUrl =
+        `https://api.football-data.org/v4/matches?dateFrom=${from}&dateTo=${to}`;
+
     } else {
       return Response.json(
         { error: "Unknown endpoint" },
